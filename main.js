@@ -206,6 +206,94 @@ function setupEventListeners() {
             }
         });
     }
+
+    // Verify identity form
+    const verifyIdentityForm = document.getElementById('verifyIdentityForm');
+    if (verifyIdentityForm) {
+        verifyIdentityForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleVerifyIdentity();
+        });
+    }
+
+    // Reset password form
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    if (resetPasswordForm) {
+        resetPasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleResetPassword();
+        });
+    }
+}
+
+// Show forgot password tab
+function showForgotPassword() {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Show forgot password tab
+    document.getElementById('forgotPasswordTab').classList.add('active');
+    
+    // Reset forms
+    document.getElementById('verifyIdentityForm').style.display = 'block';
+    document.getElementById('resetPasswordForm').style.display = 'none';
+    document.getElementById('verifyIdentityForm').reset();
+}
+
+// Back to login
+function backToLogin() {
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById('loginTab').classList.add('active');
+}
+
+// Handle verify identity
+let recoveryUserId = null;
+
+function handleVerifyIdentity() {
+    const email = document.getElementById('recoveryEmail').value;
+    const phone = document.getElementById('recoveryPhone').value;
+    
+    const result = verifyUserForRecovery(email, phone);
+    
+    if (result.success) {
+        recoveryUserId = result.userId;
+        // Show reset password form
+        document.getElementById('verifyIdentityForm').style.display = 'none';
+        document.getElementById('resetPasswordForm').style.display = 'block';
+    } else {
+        alert(result.message);
+    }
+}
+
+// Handle reset password
+function handleResetPassword() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (newPassword !== confirmPassword) {
+        alert('Passwords do not match!');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        alert('Password must be at least 6 characters long');
+        return;
+    }
+    
+    const result = resetPassword(recoveryUserId, newPassword);
+    
+    if (result.success) {
+        alert('Password reset successfully! Please login with your new password.');
+        recoveryUserId = null;
+        backToLogin();
+        document.getElementById('resetPasswordForm').reset();
+    } else {
+        alert(result.message);
+    }
 }
 
 // Close user modal

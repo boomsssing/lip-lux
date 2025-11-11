@@ -120,15 +120,6 @@
                 <div class="footer-section">
                     <h4>Contact</h4>
                     <p><i class="fas fa-map-marker-alt"></i> Accra, Ghana</p>
-                    <p><i class="fas fa-phone"></i> +233 XX XXX XXXX</p>
-                </div>
-                <div class="footer-section">
-                    <h4>Follow Us</h4>
-                    <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                    </div>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -184,6 +175,11 @@
                         <input type="password" id="loginPassword" required>
                     </div>
                     <button type="submit" class="btn btn-primary btn-block">Login</button>
+                    <p style="text-align: center; margin-top: 1rem;">
+                        <a href="#" onclick="showForgotPassword(); return false;" style="color: var(--primary); text-decoration: none; font-size: var(--fs-sm);">
+                            <i class="fas fa-key"></i> Forgot Password?
+                        </a>
+                    </p>
                 </form>
             </div>
 
@@ -214,6 +210,45 @@
                 <h3>Continue as Guest</h3>
                 <p>Shop without creating an account. You'll still be able to track your order.</p>
                 <button class="btn btn-primary btn-block" onclick="continueAsGuest()">Continue Shopping</button>
+            </div>
+
+            <div class="tab-content" id="forgotPasswordTab">
+                <h3>Reset Password</h3>
+                <p style="color: var(--gray); font-size: var(--fs-sm); margin-bottom: 1.5rem;">
+                    Enter your email and phone number to verify your identity
+                </p>
+                
+                <!-- Step 1: Verify Identity -->
+                <form id="verifyIdentityForm" style="display: block;">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="recoveryEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="recoveryPhone" placeholder="+233 XX XXX XXXX" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Verify Identity</button>
+                    <button type="button" class="btn btn-secondary btn-block" onclick="backToLogin()" style="margin-top: 0.5rem;">
+                        <i class="fas fa-arrow-left"></i> Back to Login
+                    </button>
+                </form>
+
+                <!-- Step 2: Reset Password -->
+                <form id="resetPasswordForm" style="display: none;">
+                    <div style="background: #d4edda; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; color: #155724;">
+                        <i class="fas fa-check-circle"></i> Identity verified! Create a new password.
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="newPassword" minlength="6" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input type="password" id="confirmPassword" minlength="6" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Reset Password</button>
+                </form>
             </div>
         </div>
     </div>

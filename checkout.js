@@ -62,15 +62,25 @@ function loadOrderSummary() {
     const summaryTotal = document.getElementById('summaryTotal');
 
     if (summaryItems) {
-        summaryItems.innerHTML = cart.map(item => `
-            <div class="summary-item">
-                <div class="summary-item-image">${item.image}</div>
-                <div class="summary-item-info">
-                    <div><strong>${item.name}</strong></div>
-                    <div>Qty: ${item.quantity} × GH₵ ${item.price.toFixed(2)}</div>
+        summaryItems.innerHTML = cart.map(item => {
+            // Handle different image types
+            let imageDisplay;
+            if (item.image.startsWith('data:image') || item.image.startsWith('http')) {
+                imageDisplay = `<img src="${item.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+            } else {
+                imageDisplay = item.image; // Emoji
+            }
+            
+            return `
+                <div class="summary-item">
+                    <div class="summary-item-image">${imageDisplay}</div>
+                    <div class="summary-item-info">
+                        <div><strong>${item.name}</strong></div>
+                        <div>Qty: ${item.quantity} × GH₵ ${item.price.toFixed(2)}</div>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     const subtotal = getCartTotal();
@@ -285,4 +295,12 @@ function showConfirmation(order) {
 
     // Clear session data
     sessionStorage.removeItem('checkout_customer');
+}
+
+// Track this order - redirect to track page with order code
+function trackThisOrder() {
+    const orderCode = document.getElementById('orderCode').textContent;
+    if (orderCode && orderCode !== 'LOADING...') {
+        window.location.href = `track-order.html?code=${orderCode}`;
+    }
 }

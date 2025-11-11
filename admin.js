@@ -204,6 +204,12 @@ function showSection(sectionName) {
     }
 }
 
+// Get all orders from localStorage
+function getOrders() {
+    const saved = localStorage.getItem('liplux_orders');
+    return saved ? JSON.parse(saved) : [];
+}
+
 // Load dashboard data
 function loadDashboardData() {
     const orders = getOrders();
@@ -416,7 +422,7 @@ function viewOrderDetails(code) {
             </div>
         </div>
 
-        <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px;">
+        <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
             <h4>Payment Information</h4>
             <p><strong>Method:</strong> Mobile Money (${order.payment.provider.toUpperCase()})</p>
             <p><strong>Paid To:</strong> ${order.payment.paidTo} (${order.payment.paidToName})</p>
@@ -425,6 +431,17 @@ function viewOrderDetails(code) {
             ${order.payment.reference && order.payment.reference !== 'N/A' ? 
                 `<p><strong>Transaction Reference:</strong> ${order.payment.reference}</p>` : ''}
         </div>
+        
+        ${order.deliveryImage ? `
+            <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px;">
+                <h4><i class="fas fa-camera"></i> Delivery Photo</h4>
+                <img src="${order.deliveryImage}" alt="Delivery Photo" 
+                     style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; margin-top: 1rem; border: 2px solid #fff;">
+                <p style="margin-top: 0.5rem; color: var(--gray); font-size: 0.9rem; text-align: center;">
+                    Photo taken on delivery
+                </p>
+            </div>
+        ` : ''}
     `;
 
     modal.classList.add('active');
@@ -447,12 +464,46 @@ function updateOrderStatus(code) {
     if (orderIndex === -1) return;
 
     const order = orders[orderIndex];
-    const statuses = ['pending', 'processing', 'shipped', 'delivered'];
-    const currentIndex = statuses.indexOf(order.status);
+    const statuses = [
+        { value: 'pending', label: 'Pending' },
+        { value: 'processing', label: 'Processing' },
+        { value: 'shipped', label: 'Out for Delivery' },
+        { value: 'delivered', label: 'Delivered' }
+    ];
     
-    if (currentIndex < statuses.length - 1) {
-        const newStatus = statuses[currentIndex + 1];
-        const confirmed = confirm(`Update order ${code} status to "${newStatus}"?`);
+    // Create status selection prompt
+    let statusOptions = statuses.map((s, i) => 
+        `${i + 1}. ${s.label} ${s.value === order.status ? '(Current)' : ''}`
+    ).join('\n');
+    
+    const selection = prompt(
+        `Order ${code} - Current Status: ${order.status.toUpperCase()}\n\n` +
+        `Select new status (1-4):\n${statusOptions}`,
+        ''
+    );
+    
+    if (!selection) return;
+    
+    const selectedIndex = parseInt(selection) - 1;
+    if (selectedIndex >= 0 && selectedIndex < statuses.length) {
+        const newStatus = statuses[selectedIndex].value;
+        
+        if (newStatus === order.status) {
+            alert('Order is already in this status!');
+            return;
+        }
+        
+        // If changing to delivered, offer to add delivery image
+        if (newStatus === 'delivered') {
+            const addImage = confirm(`Update order ${code} to "Delivered".\n\nWould you like to add a delivery photo? (Optional)`);
+            
+            if (addImage) {
+                showDeliveryImageUpload(order, orderIndex);
+                return;
+            }
+        }
+        
+        const confirmed = confirm(`Update order ${code} to "${statuses[selectedIndex].label}"?`);
         
         if (confirmed) {
             order.status = newStatus;
@@ -460,10 +511,146 @@ function updateOrderStatus(code) {
             localStorage.setItem('liplux_orders', JSON.stringify(orders));
             loadDashboardData();
             loadAllOrders();
-            alert('Order status updated successfully!');
+            alert(`Order status updated to "${statuses[selectedIndex].label}" successfully!`);
         }
     } else {
-        alert('Order is already delivered!');
+        alert('Invalid selection!');
+    }
+}
+
+// Show delivery image upload modal
+function showDeliveryImageUpload(order, orderIndex) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.style.zIndex = '10000';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h2>Add Delivery Photo</h2>
+            <p style="color: var(--gray); margin-bottom: 1.5rem;">Upload a photo of the delivered package (optional)</p>
+            
+            <div class="image-upload-options">
+                <div class="upload-option">
+                    <label for="deliveryImageFile" class="upload-label">
+                        <i class="fas fa-camera"></i> Take/Upload Photo
+                    </label>
+                    <input type="file" id="deliveryImageFile" accept="image/*" style="display: none;">
+                </div>
+                
+                <div class="upload-divider">OR</div>
+                
+                <div class="form-group">
+                    <label>Image URL</label>
+                    <input type="url" id="deliveryImageUrl" placeholder="Paste image URL">
+                </div>
+            </div>
+            
+            <div id="deliveryImagePreview" style="display: none; margin: 1rem 0;">
+                <img id="deliveryPreviewImg" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn btn-secondary" onclick="closeDeliveryImageModal()">Cancel</button>
+                <button class="btn btn-secondary" onclick="skipDeliveryImage('${order.code}', ${orderIndex})">Skip - No Photo</button>
+                <button class="btn btn-primary" onclick="saveDeliveryImage('${order.code}', ${orderIndex})">Save & Mark Delivered</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Setup image upload
+    document.getElementById('deliveryImageFile').addEventListener('change', handleDeliveryImageUpload);
+    document.getElementById('deliveryImageUrl').addEventListener('input', function() {
+        previewDeliveryImageUrl(this.value);
+    });
+}
+
+// Handle delivery image upload
+function handleDeliveryImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check file size (500KB limit)
+    const maxSize = 500 * 1024;
+    if (file.size > maxSize) {
+        alert('Image too large! Please use an image smaller than 500KB.');
+        event.target.value = '';
+        return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file!');
+        event.target.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Image = e.target.result;
+        document.getElementById('deliveryImageUrl').value = base64Image;
+        previewDeliveryImageUrl(base64Image);
+    };
+    reader.readAsDataURL(file);
+}
+
+// Preview delivery image URL
+function previewDeliveryImageUrl(url) {
+    if (!url) {
+        document.getElementById('deliveryImagePreview').style.display = 'none';
+        return;
+    }
+
+    if (url.startsWith('data:image') || url.startsWith('http')) {
+        const preview = document.getElementById('deliveryImagePreview');
+        const previewImg = document.getElementById('deliveryPreviewImg');
+        previewImg.src = url;
+        preview.style.display = 'block';
+    }
+}
+
+// Save delivery image and update status
+function saveDeliveryImage(code, orderIndex) {
+    const imageUrl = document.getElementById('deliveryImageUrl').value;
+    
+    if (!imageUrl) {
+        alert('Please upload an image or click "Skip - No Photo"');
+        return;
+    }
+    
+    const orders = getOrders();
+    const order = orders[orderIndex];
+    
+    order.status = 'delivered';
+    order.timeline.delivered = new Date().toISOString();
+    order.deliveryImage = imageUrl;
+    
+    localStorage.setItem('liplux_orders', JSON.stringify(orders));
+    closeDeliveryImageModal();
+    loadDashboardData();
+    loadAllOrders();
+    alert('Order marked as delivered with photo!');
+}
+
+// Skip delivery image
+function skipDeliveryImage(code, orderIndex) {
+    const orders = getOrders();
+    const order = orders[orderIndex];
+    
+    order.status = 'delivered';
+    order.timeline.delivered = new Date().toISOString();
+    
+    localStorage.setItem('liplux_orders', JSON.stringify(orders));
+    closeDeliveryImageModal();
+    loadDashboardData();
+    loadAllOrders();
+    alert('Order marked as delivered!');
+}
+
+// Close delivery image modal
+function closeDeliveryImageModal() {
+    const modal = document.querySelector('.modal.active');
+    if (modal && modal.querySelector('#deliveryImageFile')) {
+        modal.remove();
     }
 }
 

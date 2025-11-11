@@ -79,6 +79,32 @@ function continueAsGuest() {
     closeUserModal();
 }
 
+// Password Recovery - Verify user by email and phone
+function verifyUserForRecovery(email, phone) {
+    const users = getUsers();
+    const user = users.find(u => u.email === email && u.phone === phone);
+    
+    if (user) {
+        return { success: true, userId: user.id };
+    }
+    
+    return { success: false, message: 'Email and phone number do not match our records' };
+}
+
+// Reset password
+function resetPassword(userId, newPassword) {
+    const users = getUsers();
+    const userIndex = users.findIndex(u => u.id === userId);
+    
+    if (userIndex !== -1) {
+        users[userIndex].password = newPassword;
+        saveUsers(users);
+        return { success: true, message: 'Password reset successfully!' };
+    }
+    
+    return { success: false, message: 'User not found' };
+}
+
 // Update user UI
 function updateUserUI() {
     const userBtn = document.getElementById('userBtn');

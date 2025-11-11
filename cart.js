@@ -86,23 +86,33 @@ function updateCartUI() {
     if (cart.length === 0) {
         cartItemsEl.innerHTML = '<div class="empty-cart"><i class="fas fa-shopping-cart" style="font-size: 3rem; margin-bottom: 1rem;"></i><p>Your cart is empty</p></div>';
     } else {
-        cartItemsEl.innerHTML = cart.map(item => `
-            <div class="cart-item">
-                <div class="cart-item-image">${item.image}</div>
-                <div class="cart-item-info">
-                    <div class="cart-item-name">${item.name}</div>
-                    <div class="cart-item-price">GH₵ ${item.price.toFixed(2)}</div>
-                    <div class="cart-item-quantity">
-                        <button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
-                        <span>${item.quantity}</span>
-                        <button class="qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+        cartItemsEl.innerHTML = cart.map(item => {
+            // Handle different image types
+            let imageDisplay;
+            if (item.image.startsWith('data:image') || item.image.startsWith('http')) {
+                imageDisplay = `<img src="${item.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+            } else {
+                imageDisplay = item.image; // Emoji
+            }
+            
+            return `
+                <div class="cart-item">
+                    <div class="cart-item-image">${imageDisplay}</div>
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.name}</div>
+                        <div class="cart-item-price">GH₵ ${item.price.toFixed(2)}</div>
+                        <div class="cart-item-quantity">
+                            <button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
+                            <span>${item.quantity}</span>
+                            <button class="qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+                        </div>
                     </div>
+                    <button class="remove-item" onclick="removeFromCart(${item.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </div>
-                <button class="remove-item" onclick="removeFromCart(${item.id})">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     // Update cart total

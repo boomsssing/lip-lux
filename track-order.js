@@ -54,6 +54,12 @@ function setupTrackingForm() {
     }
 }
 
+// Get all orders from localStorage
+function getOrders() {
+    const saved = localStorage.getItem('liplux_orders');
+    return saved ? JSON.parse(saved) : [];
+}
+
 // Track order
 function trackOrder(code) {
     const orders = getOrders();
@@ -120,6 +126,34 @@ function displayOrderDetails(order) {
 
     // Display total
     document.getElementById('displayOrderTotal').textContent = `GH₵ ${order.total.toFixed(2)}`;
+    
+    // Display delivery image if available
+    displayDeliveryImage(order);
+}
+
+// Display delivery image if order is delivered with photo
+function displayDeliveryImage(order) {
+    const deliveryImageContainer = document.getElementById('deliveryImageContainer');
+    
+    if (!deliveryImageContainer) return;
+    
+    if (order.status === 'delivered' && order.deliveryImage) {
+        deliveryImageContainer.innerHTML = `
+            <div style="margin-top: 2rem; padding: 1.5rem; background: var(--white); border-radius: 12px; box-shadow: var(--shadow);">
+                <h3 style="margin-bottom: 1rem; color: var(--dark); font-size: var(--fs-lg);">
+                    <i class="fas fa-camera"></i> Delivery Photo
+                </h3>
+                <img src="${order.deliveryImage}" alt="Delivery Photo" 
+                     style="width: 100%; max-height: 400px; object-fit: contain; border-radius: 8px; border: 2px solid var(--light);">
+                <p style="margin-top: 0.5rem; color: var(--gray); font-size: var(--fs-xs); text-align: center;">
+                    Photo taken on delivery
+                </p>
+            </div>
+        `;
+        deliveryImageContainer.style.display = 'block';
+    } else {
+        deliveryImageContainer.style.display = 'none';
+    }
 }
 
 // Update timeline
