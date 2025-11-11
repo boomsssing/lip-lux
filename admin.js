@@ -1,0 +1,564 @@
+// Admin Portal JavaScript
+
+const ADMIN_CREDENTIALS = {
+    username: 'admin',
+    password: 'admin123'
+};
+
+let isAdminLoggedIn = false;
+let autoRefreshInterval = null;
+let lastOrderCount = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    checkAdminAuth();
+    setupAdminListeners();
+    
+    // Start auto-refresh for real-time updates
+    if (isAdminLoggedIn) {
+        startAutoRefresh();
+    }
+});
+
+// Check admin authentication
+function checkAdminAuth() {
+    const saved = sessionStorage.getItem('admin_logged_in');
+    if (saved === 'true') {
+        isAdminLoggedIn = true;
+        showAdminDashboard();
+    } else {
+        showAdminLogin();
+    }
+}
+
+// Show admin login
+function showAdminLogin() {
+    document.getElementById('adminLogin').style.display = 'flex';
+    document.getElementById('adminDashboard').style.display = 'none';
+}
+
+// Show admin dashboard
+function showAdminDashboard() {
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminDashboard').style.display = 'block';
+    loadDashboardData();
+    startAutoRefresh();
+}
+
+// Start auto-refresh for real-time updates
+function startAutoRefresh() {
+    // Clear any existing interval
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    // Refresh every 30 seconds
+    autoRefreshInterval = setInterval(() => {
+        const activeSection = document.querySelector('.admin-section.active');
+        if (activeSection) {
+            const sectionId = activeSection.id;
+            if (sectionId === 'dashboardSection') {
+                loadDashboardData();
+            } else if (sectionId === 'ordersSection') {
+                const statusFilter = document.getElementById('orderStatusFilter').value;
+                loadAllOrders(statusFilter);
+            }
+        }
+    }, 30000); // 30 seconds
+}
+
+// Stop auto-refresh
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+// Setup admin listeners
+function setupAdminListeners() {
+    // Login form
+    const loginForm = document.getElementById('adminLoginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('adminUsername').value;
+            const password = document.getElementById('adminPassword').value;
+
+            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+                isAdminLoggedIn = true;
+                sessionStorage.setItem('admin_logged_in', 'true');
+                showAdminDashboard();
+            } else {
+                alert('Invalid credentials');
+            }
+        });
+    }
+
+    // Navigation
+    const navLinks = document.querySelectorAll('.admin-nav-links a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            navLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+
+            const section = this.dataset.section;
+            showSection(section);
+        });
+    });
+
+    // Order status filter
+    const statusFilter = document.getElementById('orderStatusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            loadAllOrders(this.value);
+        });
+    }
+
+    // Order search
+    const searchInput = document.getElementById('orderSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            searchOrders(this.value);
+        });
+    }
+
+    // Product form
+    const productForm = document.getElementById('productForm');
+    if (productForm) {
+        productForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveProduct();
+        });
+    }
+}
+
+// Show section
+function showSection(sectionName) {
+    document.querySelectorAll('.admin-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    document.getElementById(sectionName + 'Section').classList.add('active');
+
+    // Load section data
+    switch(sectionName) {
+        case 'dashboard':
+            loadDashboardData();
+            break;
+        case 'orders':
+            loadAllOrders();
+            break;
+        case 'products':
+            loadAdminProducts();
+            break;
+        case 'customers':
+            loadCustomers();
+            break;
+    }
+}
+
+// Load dashboard data
+function loadDashboardData() {
+    const orders = getOrders();
+    
+    // Check for new orders
+    if (lastOrderCount > 0 && orders.length > lastOrderCount) {
+        showNewOrderNotification(orders.length - lastOrderCount);
+    }
+    lastOrderCount = orders.length;
+    
+    // Update stats
+    document.getElementById('totalOrders').textContent = orders.length;
+    document.getElementById('pendingOrders').textContent = orders.filter(o => o.status === 'pending').length;
+    document.getElementById('shippedOrders').textContent = orders.filter(o => o.status === 'shipped').length;
+    document.getElementById('completedOrders').textContent = orders.filter(o => o.status === 'delivered').length;
+
+    // Update last updated time
+    updateLastUpdatedTime();
+
+    // Load recent orders
+    loadRecentOrders();
+}
+
+// Update last updated time
+function updateLastUpdatedTime() {
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+    if (lastUpdatedEl) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        lastUpdatedEl.textContent = timeString;
+    }
+}
+
+// Show new order notification
+function showNewOrderNotification(count) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: linear-gradient(135deg, #ff69b4, #e91e63);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        z-index: 10000;
+        animation: slideInRight 0.5s;
+        font-size: 1.1rem;
+        font-weight: bold;
+    `;
+    notification.innerHTML = `
+        <i class="fas fa-bell"></i> 
+        ${count} New Order${count > 1 ? 's' : ''}!
+    `;
+    document.body.appendChild(notification);
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.5s';
+        setTimeout(() => notification.remove(), 500);
+    }, 5000);
+}
+
+// Load recent orders
+function loadRecentOrders() {
+    const orders = getOrders().slice(-10).reverse();
+    const tableBody = document.getElementById('recentOrdersTable');
+
+    if (orders.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No orders yet</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = orders.map(order => `
+        <tr>
+            <td><strong>${order.code}</strong></td>
+            <td>${order.customer.name}</td>
+            <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+            <td><strong>GH₵ ${order.total.toFixed(2)}</strong></td>
+            <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+            <td>
+                <button class="action-btn btn-view" onclick="viewOrderDetails('${order.code}')">View</button>
+                <button class="action-btn btn-update" onclick="updateOrderStatus('${order.code}')">Update</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Load all orders
+function loadAllOrders(statusFilter = 'all') {
+    let orders = getOrders();
+    
+    if (statusFilter !== 'all') {
+        orders = orders.filter(o => o.status === statusFilter);
+    }
+
+    const tableBody = document.getElementById('allOrdersTable');
+
+    if (orders.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem;">No orders found</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = orders.reverse().map(order => `
+        <tr>
+            <td><strong>${order.code}</strong></td>
+            <td>${order.customer.name}</td>
+            <td>${order.customer.phone}</td>
+            <td>${order.customer.address}, ${order.customer.city}</td>
+            <td>${order.items.length} items</td>
+            <td><strong>GH₵ ${order.total.toFixed(2)}</strong></td>
+            <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+            <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+            <td>
+                <button class="action-btn btn-view" onclick="viewOrderDetails('${order.code}')">View</button>
+                <button class="action-btn btn-update" onclick="updateOrderStatus('${order.code}')">Update</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Search orders
+function searchOrders(query) {
+    const orders = getOrders();
+    const filtered = orders.filter(o => 
+        o.code.toLowerCase().includes(query.toLowerCase()) ||
+        o.customer.name.toLowerCase().includes(query.toLowerCase()) ||
+        o.customer.phone.includes(query)
+    );
+
+    const tableBody = document.getElementById('allOrdersTable');
+    
+    if (filtered.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem;">No orders found</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = filtered.reverse().map(order => `
+        <tr>
+            <td><strong>${order.code}</strong></td>
+            <td>${order.customer.name}</td>
+            <td>${order.customer.phone}</td>
+            <td>${order.customer.address}, ${order.customer.city}</td>
+            <td>${order.items.length} items</td>
+            <td><strong>GH₵ ${order.total.toFixed(2)}</strong></td>
+            <td>${new Date(order.createdAt).toLocaleDateString()}</td>
+            <td><span class="status-badge status-${order.status}">${order.status}</span></td>
+            <td>
+                <button class="action-btn btn-view" onclick="viewOrderDetails('${order.code}')">View</button>
+                <button class="action-btn btn-update" onclick="updateOrderStatus('${order.code}')">Update</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// View order details
+function viewOrderDetails(code) {
+    const orders = getOrders();
+    const order = orders.find(o => o.code === code);
+    
+    if (!order) return;
+
+    const modal = document.getElementById('orderDetailsModal');
+    const content = document.getElementById('orderDetailsContent');
+    const overlay = document.getElementById('overlay');
+
+    content.innerHTML = `
+        <div style="margin-bottom: 2rem;">
+            <h3>Order ${order.code}</h3>
+            <span class="status-badge status-${order.status}">${order.status}</span>
+        </div>
+        
+        <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <h4>Customer Information</h4>
+            <p><strong>Name:</strong> ${order.customer.name}</p>
+            <p><strong>Phone:</strong> ${order.customer.phone}</p>
+            <p><strong>Email:</strong> ${order.customer.email || 'N/A'}</p>
+            <p><strong>Address:</strong> ${order.customer.address}, ${order.customer.city}</p>
+            ${order.customer.notes ? `<p><strong>Notes:</strong> ${order.customer.notes}</p>` : ''}
+        </div>
+
+        <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+            <h4>Order Items</h4>
+            ${order.items.map(item => `
+                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #fff;">
+                    <div>
+                        <strong>${item.name}</strong><br>
+                        <span style="color: #95a5a6;">Qty: ${item.quantity} × GH₵ ${item.price.toFixed(2)}</span>
+                    </div>
+                    <div style="font-weight: bold;">GH₵ ${(item.price * item.quantity).toFixed(2)}</div>
+                </div>
+            `).join('')}
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid #fff;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Subtotal:</span>
+                    <span>GH₵ ${order.subtotal.toFixed(2)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Delivery:</span>
+                    <span>GH₵ ${order.delivery.toFixed(2)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold; color: #ff69b4;">
+                    <span>Total:</span>
+                    <span>GH₵ ${order.total.toFixed(2)}</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: #ecf0f1; padding: 1.5rem; border-radius: 8px;">
+            <h4>Payment Information</h4>
+            <p><strong>Method:</strong> Mobile Money (${order.payment.provider.toUpperCase()})</p>
+            <p><strong>Paid To:</strong> ${order.payment.paidTo} (${order.payment.paidToName})</p>
+            <p><strong>Customer Number:</strong> ${order.payment.customerNumber}</p>
+            <p><strong>Customer Name:</strong> ${order.payment.customerName}</p>
+            ${order.payment.reference && order.payment.reference !== 'N/A' ? 
+                `<p><strong>Transaction Reference:</strong> ${order.payment.reference}</p>` : ''}
+        </div>
+    `;
+
+    modal.classList.add('active');
+    overlay.classList.add('active');
+}
+
+// Close order modal
+function closeOrderModal() {
+    const modal = document.getElementById('orderDetailsModal');
+    const overlay = document.getElementById('overlay');
+    modal.classList.remove('active');
+    overlay.classList.remove('active');
+}
+
+// Update order status
+function updateOrderStatus(code) {
+    const orders = getOrders();
+    const orderIndex = orders.findIndex(o => o.code === code);
+    
+    if (orderIndex === -1) return;
+
+    const order = orders[orderIndex];
+    const statuses = ['pending', 'processing', 'shipped', 'delivered'];
+    const currentIndex = statuses.indexOf(order.status);
+    
+    if (currentIndex < statuses.length - 1) {
+        const newStatus = statuses[currentIndex + 1];
+        const confirmed = confirm(`Update order ${code} status to "${newStatus}"?`);
+        
+        if (confirmed) {
+            order.status = newStatus;
+            order.timeline[newStatus] = new Date().toISOString();
+            localStorage.setItem('liplux_orders', JSON.stringify(orders));
+            loadDashboardData();
+            loadAllOrders();
+            alert('Order status updated successfully!');
+        }
+    } else {
+        alert('Order is already delivered!');
+    }
+}
+
+// Load admin products
+function loadAdminProducts() {
+    const grid = document.getElementById('adminProductsGrid');
+    
+    grid.innerHTML = products.map(product => `
+        <div class="admin-product-card">
+            <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">${product.image}</div>
+            <h4>${product.name}</h4>
+            <p style="color: #95a5a6; font-size: 0.9rem;">${product.category}</p>
+            <p style="font-size: 1.2rem; font-weight: bold; color: #ff69b4; margin: 0.5rem 0;">GH₵ ${product.price.toFixed(2)}</p>
+            <p style="color: #95a5a6; font-size: 0.9rem;">Stock: ${product.stock}</p>
+            <div class="admin-product-actions">
+                <button class="action-btn btn-update" onclick="editProduct(${product.id})">Edit</button>
+                <button class="action-btn btn-view" onclick="deleteProduct(${product.id})">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Open add product modal
+function openAddProductModal() {
+    document.getElementById('productModalTitle').textContent = 'Add Product';
+    document.getElementById('productForm').reset();
+    document.getElementById('productForm').dataset.editId = '';
+    document.getElementById('productModal').classList.add('active');
+    document.getElementById('overlay').classList.add('active');
+}
+
+// Close product modal
+function closeProductModal() {
+    document.getElementById('productModal').classList.remove('active');
+    document.getElementById('overlay').classList.remove('active');
+}
+
+// Edit product
+function editProduct(id) {
+    const product = products.find(p => p.id === id);
+    if (!product) return;
+
+    document.getElementById('productModalTitle').textContent = 'Edit Product';
+    document.getElementById('productName').value = product.name;
+    document.getElementById('productPrice').value = product.price;
+    document.getElementById('productCategory').value = product.category;
+    document.getElementById('productDescription').value = product.description;
+    document.getElementById('productImage').value = product.image;
+    document.getElementById('productStock').value = product.stock;
+    document.getElementById('productForm').dataset.editId = id;
+
+    document.getElementById('productModal').classList.add('active');
+    document.getElementById('overlay').classList.add('active');
+}
+
+// Save product
+function saveProduct() {
+    const form = document.getElementById('productForm');
+    const editId = form.dataset.editId;
+
+    const productData = {
+        name: document.getElementById('productName').value,
+        price: parseFloat(document.getElementById('productPrice').value),
+        category: document.getElementById('productCategory').value,
+        description: document.getElementById('productDescription').value,
+        image: document.getElementById('productImage').value || '💄',
+        stock: parseInt(document.getElementById('productStock').value)
+    };
+
+    if (editId) {
+        // Update existing
+        const index = products.findIndex(p => p.id == editId);
+        if (index !== -1) {
+            products[index] = { ...products[index], ...productData };
+        }
+    } else {
+        // Add new
+        productData.id = Date.now();
+        products.push(productData);
+    }
+
+    saveProducts();
+    loadAdminProducts();
+    closeProductModal();
+    alert('Product saved successfully!');
+}
+
+// Delete product
+function deleteProduct(id) {
+    if (confirm('Are you sure you want to delete this product?')) {
+        const index = products.findIndex(p => p.id === id);
+        if (index !== -1) {
+            products.splice(index, 1);
+            saveProducts();
+            loadAdminProducts();
+            alert('Product deleted successfully!');
+        }
+    }
+}
+
+// Load customers
+function loadCustomers() {
+    const users = getUsers();
+    const orders = getOrders();
+    const tableBody = document.getElementById('customersTable');
+
+    if (users.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No registered customers yet</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = users.map(user => {
+        const userOrders = orders.filter(o => o.customer.email === user.email);
+        const totalSpent = userOrders.reduce((sum, o) => sum + o.total, 0);
+
+        return `
+            <tr>
+                <td>${user.name}</td>
+                <td>${user.email}</td>
+                <td>${user.phone}</td>
+                <td>${userOrders.length}</td>
+                <td><strong>GH₵ ${totalSpent.toFixed(2)}</strong></td>
+                <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Admin logout
+function adminLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        stopAutoRefresh();
+        sessionStorage.removeItem('admin_logged_in');
+        isAdminLoggedIn = false;
+        window.location.reload();
+    }
+}
+
+// Setup overlay click
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'overlay') {
+        closeOrderModal();
+        closeProductModal();
+    }
+});

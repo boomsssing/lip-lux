@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - LipLux By Jay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <a href="index.html">
+                        <img src="34D5AF78-54DE-4B62-B538-7C3E2FC51EE6.png" alt="LipLux By Jay">
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="index.html">Home</a>
+                    <a href="index.html#products">Shop</a>
+                    <a href="user-dashboard.html" class="active">My Account</a>
+                    <a href="track-order.html">Track Order</a>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn-icon" id="userBtn">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                    <button class="btn-icon" id="cartBtn">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="cart-count">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- User Dashboard -->
+    <div class="user-dashboard-page">
+        <div class="container">
+            <!-- User Info Header -->
+            <div class="user-header">
+                <div class="user-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="user-info">
+                    <h1 id="userName">Welcome Back!</h1>
+                    <p id="userEmail"></p>
+                </div>
+                <button class="btn btn-secondary" onclick="userLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+
+            <!-- Dashboard Tabs -->
+            <div class="dashboard-tabs">
+                <button class="dashboard-tab active" data-tab="orders">
+                    <i class="fas fa-shopping-bag"></i> My Orders
+                </button>
+                <button class="dashboard-tab" data-tab="profile">
+                    <i class="fas fa-user"></i> Profile
+                </button>
+                <button class="dashboard-tab" data-tab="addresses">
+                    <i class="fas fa-map-marker-alt"></i> Addresses
+                </button>
+            </div>
+
+            <!-- Orders Tab -->
+            <div class="dashboard-content active" id="ordersTab">
+                <div class="section-header-user">
+                    <h2>My Orders</h2>
+                    <div class="order-filters">
+                        <select id="userOrderFilter" class="filter-select">
+                            <option value="all">All Orders</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="shipped">Out for Delivery</option>
+                            <option value="delivered">Delivered</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="orders-grid" id="userOrdersGrid">
+                    <!-- Orders will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div class="dashboard-content" id="profileTab">
+                <div class="profile-card">
+                    <h2>Profile Information</h2>
+                    <form id="profileForm">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="profileName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="profileEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="tel" id="profilePhone" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                    </form>
+                </div>
+
+                <div class="profile-card">
+                    <h2>Change Password</h2>
+                    <form id="passwordForm">
+                        <div class="form-group">
+                            <label>Current Password</label>
+                            <input type="password" id="currentPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" id="newPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm New Password</label>
+                            <input type="password" id="confirmPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Change Password</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Addresses Tab -->
+            <div class="dashboard-content" id="addressesTab">
+                <div class="section-header-user">
+                    <h2>Saved Addresses</h2>
+                    <button class="btn btn-primary" onclick="openAddAddressModal()">
+                        <i class="fas fa-plus"></i> Add Address
+                    </button>
+                </div>
+
+                <div class="addresses-grid" id="addressesGrid">
+                    <!-- Addresses will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal" id="orderDetailsModal">
+        <div class="modal-content large">
+            <button class="close-btn" onclick="closeOrderDetailsModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="orderDetailsContent">
+                <!-- Order details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Address Modal -->
+    <div class="modal" id="addAddressModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeAddAddressModal()">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2>Add New Address</h2>
+            <form id="addAddressForm">
+                <div class="form-group">
+                    <label>Address Label</label>
+                    <input type="text" id="addressLabel" placeholder="e.g., Home, Work" required>
+                </div>
+                <div class="form-group">
+                    <label>Full Address</label>
+                    <textarea id="addressFull" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" id="addressCity" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="addressPhone" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Save Address</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>LipLux By Jay</h3>
+                    <p>Glossy Vibes, Timeless Beauty</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <a href="index.html">Home</a>
+                    <a href="index.html#products">Shop</a>
+                    <a href="track-order.html">Track Order</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 LipLux By Jay. All rights reserved.</p>
+                <a href="admin.html" class="admin-link" title="Admin Portal">
+                    <i class="fas fa-shield-alt"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="products.js"></script>
+    <script src="cart.js"></script>
+    <script src="auth.js"></script>
+    <script src="user-dashboard.js"></script>
+</body>
+</html>

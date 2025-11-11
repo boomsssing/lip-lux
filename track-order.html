@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Order - LipLux By Jay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <div class="logo">
+                    <a href="index.html">
+                        <img src="34D5AF78-54DE-4B62-B538-7C3E2FC51EE6.png" alt="LipLux By Jay">
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="index.html">Home</a>
+                    <a href="index.html#products">Shop</a>
+                    <a href="track-order.html" class="active">Track Order</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="track-order-page">
+        <div class="container">
+            <div class="track-header">
+                <h1>Track Your Order</h1>
+                <p>Enter your order tracking code to see the status of your delivery</p>
+            </div>
+
+            <div class="track-form-container">
+                <form id="trackForm">
+                    <div class="form-group">
+                        <label>Order Tracking Code</label>
+                        <input type="text" id="trackingCode" placeholder="Enter your tracking code" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Track Order</button>
+                </form>
+            </div>
+
+            <div class="order-details" id="orderDetails" style="display: none;">
+                <div class="order-info-card">
+                    <div class="order-header">
+                        <h2>Order Details</h2>
+                        <span class="order-status" id="orderStatus">Processing</span>
+                    </div>
+                    
+                    <div class="order-info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Order Code</span>
+                            <span class="info-value" id="displayOrderCode"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Order Date</span>
+                            <span class="info-value" id="displayOrderDate"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Customer Name</span>
+                            <span class="info-value" id="displayCustomerName"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Phone Number</span>
+                            <span class="info-value" id="displayCustomerPhone"></span>
+                        </div>
+                        <div class="info-item full-width">
+                            <span class="info-label">Delivery Address</span>
+                            <span class="info-value" id="displayCustomerAddress"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tracking-timeline">
+                    <h3>Order Status</h3>
+                    <div class="timeline">
+                        <div class="timeline-item completed">
+                            <div class="timeline-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h4>Order Placed</h4>
+                                <p id="statusPlaced">Your order has been received</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" id="timelineProcessing">
+                            <div class="timeline-icon">
+                                <i class="fas fa-box"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h4>Processing</h4>
+                                <p>We're preparing your order</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" id="timelineShipped">
+                            <div class="timeline-icon">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h4>Out for Delivery</h4>
+                                <p>Your order is on the way</p>
+                            </div>
+                        </div>
+                        <div class="timeline-item" id="timelineDelivered">
+                            <div class="timeline-icon">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h4>Delivered</h4>
+                                <p>Order has been delivered</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="order-items-card">
+                    <h3>Order Items</h3>
+                    <div id="displayOrderItems"></div>
+                    <div class="order-total">
+                        <span>Total Amount:</span>
+                        <span id="displayOrderTotal"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="error-message" id="errorMessage" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Order not found. Please check your tracking code and try again.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>LipLux By Jay</h3>
+                    <p>Glossy Vibes, Timeless Beauty</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <a href="index.html">Home</a>
+                    <a href="index.html#products">Shop</a>
+                    <a href="track-order.html">Track Order</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 LipLux By Jay. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="products.js"></script>
+    <script src="track-order.js"></script>
+</body>
+</html>
