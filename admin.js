@@ -9,7 +9,40 @@ let isAdminLoggedIn = false;
 let autoRefreshInterval = null;
 let lastOrderCount = 0;
 
+// Navbar scroll behavior
+let lastScrollTop = 0;
+const navbar = document.querySelector('.admin-navbar');
+let scrollTimeout;
+
+window.addEventListener('scroll', function() {
+    clearTimeout(scrollTimeout);
+    
+    scrollTimeout = setTimeout(function() {
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop > lastScrollTop && scrollTop > 100) {
+            // Scrolling down
+            if (navbar) {
+                navbar.classList.add('hidden');
+                navbar.classList.remove('visible');
+            }
+        } else {
+            // Scrolling up
+            if (navbar) {
+                navbar.classList.remove('hidden');
+                navbar.classList.add('visible');
+            }
+        }
+        
+        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+    }, 10);
+});
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize navbar as visible
+    if (navbar) {
+        navbar.classList.add('visible');
+    }
     checkAdminAuth();
     setupAdminListeners();
     

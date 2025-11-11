@@ -1,10 +1,40 @@
 // Main JavaScript for Homepage
 
+// Navbar scroll behavior
+let lastScrollTop = 0;
+const navbar = document.querySelector('.navbar');
+let scrollTimeout;
+
+window.addEventListener('scroll', function() {
+    clearTimeout(scrollTimeout);
+    
+    scrollTimeout = setTimeout(function() {
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop > lastScrollTop && scrollTop > 100) {
+            // Scrolling down
+            navbar.classList.add('hidden');
+            navbar.classList.remove('visible');
+        } else {
+            // Scrolling up
+            navbar.classList.remove('hidden');
+            navbar.classList.add('visible');
+        }
+        
+        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+    }, 10);
+});
+
 // Load products on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadProductsGrid();
     setupEventListeners();
     updateCartUI();
+    
+    // Initialize navbar as visible
+    if (navbar) {
+        navbar.classList.add('visible');
+    }
 });
 
 // Load products grid

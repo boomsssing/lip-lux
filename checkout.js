@@ -3,7 +3,36 @@
 let selectedMomoProvider = 'mtn';
 const DELIVERY_FEE = 10.00;
 
+// Navbar scroll behavior
+let lastScrollTop = 0;
+const navbar = document.querySelector('.navbar');
+let scrollTimeout;
+
+window.addEventListener('scroll', function() {
+    clearTimeout(scrollTimeout);
+    
+    scrollTimeout = setTimeout(function() {
+        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop > lastScrollTop && scrollTop > 100) {
+            // Scrolling down
+            navbar.classList.add('hidden');
+            navbar.classList.remove('visible');
+        } else {
+            // Scrolling up
+            navbar.classList.remove('hidden');
+            navbar.classList.add('visible');
+        }
+        
+        lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+    }, 10);
+});
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize navbar as visible
+    if (navbar) {
+        navbar.classList.add('visible');
+    }
     // Check if cart is empty
     if (cart.length === 0) {
         alert('Your cart is empty!');
