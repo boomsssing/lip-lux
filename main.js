@@ -14,22 +14,32 @@ function loadProductsGrid(filter = 'all') {
 
     const filteredProducts = getProductsByCategory(filter);
     
-    grid.innerHTML = filteredProducts.map(product => `
-        <div class="product-card" data-category="${product.category}">
-            <div class="product-image">${product.image}</div>
-            <div class="product-info">
-                <h3 class="product-name">${product.name}</h3>
-                <span class="product-category">${product.category}</span>
-                <p class="product-description">${product.description}</p>
-                <div class="product-footer">
-                    <span class="product-price">GH₵ ${product.price.toFixed(2)}</span>
-                    <button class="btn-add-cart" onclick="addToCart(${product.id})">
-                        <i class="fas fa-cart-plus"></i> Add
-                    </button>
+    grid.innerHTML = filteredProducts.map(product => {
+        // Check if image is Base64, URL, or emoji
+        let imageDisplay;
+        if (product.image.startsWith('data:image') || product.image.startsWith('http')) {
+            imageDisplay = `<img src="${product.image}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        } else {
+            imageDisplay = product.image;
+        }
+        
+        return `
+            <div class="product-card" data-category="${product.category}">
+                <div class="product-image">${imageDisplay}</div>
+                <div class="product-info">
+                    <h3 class="product-name">${product.name}</h3>
+                    <span class="product-category">${product.category}</span>
+                    <p class="product-description">${product.description}</p>
+                    <div class="product-footer">
+                        <span class="product-price">GH₵ ${product.price.toFixed(2)}</span>
+                        <button class="btn-add-cart" onclick="addToCart(${product.id})">
+                            <i class="fas fa-cart-plus"></i> Add
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Setup event listeners

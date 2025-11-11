@@ -131,6 +131,20 @@ function setupAdminListeners() {
             saveProduct();
         });
     }
+
+    // Image upload handler
+    const imageFileInput = document.getElementById('productImageFile');
+    if (imageFileInput) {
+        imageFileInput.addEventListener('change', handleImageUpload);
+    }
+
+    // Image URL preview
+    const imageUrlInput = document.getElementById('productImageUrl');
+    if (imageUrlInput) {
+        imageUrlInput.addEventListener('input', function() {
+            previewImageUrl(this.value);
+        });
+    }
 }
 
 // Show section
@@ -424,19 +438,29 @@ function updateOrderStatus(code) {
 function loadAdminProducts() {
     const grid = document.getElementById('adminProductsGrid');
     
-    grid.innerHTML = products.map(product => `
-        <div class="admin-product-card">
-            <div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">${product.image}</div>
-            <h4>${product.name}</h4>
-            <p style="color: #95a5a6; font-size: 0.9rem;">${product.category}</p>
-            <p style="font-size: 1.2rem; font-weight: bold; color: #ff69b4; margin: 0.5rem 0;">GH₵ ${product.price.toFixed(2)}</p>
-            <p style="color: #95a5a6; font-size: 0.9rem;">Stock: ${product.stock}</p>
-            <div class="admin-product-actions">
-                <button class="action-btn btn-update" onclick="editProduct(${product.id})">Edit</button>
-                <button class="action-btn btn-view" onclick="deleteProduct(${product.id})">Delete</button>
+    grid.innerHTML = products.map(product => {
+        // Check if image is Base64, URL, or emoji
+        let imageDisplay;
+        if (product.image.startsWith('data:image') || product.image.startsWith('http')) {
+            imageDisplay = `<img src="${product.image}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem;">`;
+        } else {
+            imageDisplay = `<div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">${product.image}</div>`;
+        }
+        
+        return `
+            <div class="admin-product-card">
+                ${imageDisplay}
+                <h4>${product.name}</h4>
+                <p style="color: #95a5a6; font-size: 0.9rem;">${product.category}</p>
+                <p style="font-size: 1.2rem; font-weight: bold; color: #ff69b4; margin: 0.5rem 0;">GH₵ ${product.price.toFixed(2)}</p>
+                <p style="color: #95a5a6; font-size: 0.9rem;">Stock: ${product.stock}</p>
+                <div class="admin-product-actions">
+                    <button class="action-btn btn-update" onclick="editProduct(${product.id})">Edit</button>
+                    <button class="action-btn btn-view" onclick="deleteProduct(${product.id})">Delete</button>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // Open add product modal
@@ -454,6 +478,80 @@ function closeProductModal() {
     document.getElementById('overlay').classList.remove('active');
 }
 
+// Handle image upload
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check file size (500KB limit for performance)
+    const maxSize = 500 * 1024; // 500KB
+    if (file.size > maxSize) {
+        alert('Image too large! Please use an image smaller than 500KB for best performance.');
+        event.target.value = '';
+        return;
+    }
+
+    // Check if it's an image
+    if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file!');
+        event.target.value = '';
+        return;
+    }
+
+    // Convert to Base64
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Image = e.target.result;
+        
+        // Show preview
+        const preview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        previewImg.src = base64Image;
+        preview.style.display = 'block';
+
+        // Store in hidden field
+        document.getElementById('productImageUrl').value = base64Image;
+    };
+    reader.readAsDataURL(file);
+}
+
+// Preview image URL
+function previewImageUrl(url) {
+    if (!url) {
+        document.getElementById('imagePreview').style.display = 'none';
+        return;
+    }
+
+    // Check if it's a Base64 image or URL
+    if (url.startsWith('data:image') || url.startsWith('http')) {
+        const preview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        previewImg.src = url;
+        preview.style.display = 'block';
+    } else {
+        // It's probably an emoji or invalid
+        document.getElementById('imagePreview').style.display = 'none';
+    }
+}
+
+// Check localStorage usage
+function checkStorageUsage() {
+    let total = 0;
+    for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+            total += localStorage[key].length + key.length;
+        }
+    }
+    const usedMB = (total / 1024 / 1024).toFixed(2);
+    const limitMB = 5; // Most browsers limit to 5-10MB
+    
+    if (usedMB > limitMB * 0.8) {
+        alert(`Warning: Storage is ${usedMB}MB / ~${limitMB}MB. Consider using image URLs instead of uploads.`);
+    }
+    
+    return { used: usedMB, limit: limitMB };
+}
+
 // Edit product
 function editProduct(id) {
     const product = products.find(p => p.id === id);
@@ -464,9 +562,12 @@ function editProduct(id) {
     document.getElementById('productPrice').value = product.price;
     document.getElementById('productCategory').value = product.category;
     document.getElementById('productDescription').value = product.description;
-    document.getElementById('productImage').value = product.image;
+    document.getElementById('productImageUrl').value = product.image;
     document.getElementById('productStock').value = product.stock;
     document.getElementById('productForm').dataset.editId = id;
+
+    // Show preview if image exists
+    previewImageUrl(product.image);
 
     document.getElementById('productModal').classList.add('active');
     document.getElementById('overlay').classList.add('active');
@@ -477,14 +578,19 @@ function saveProduct() {
     const form = document.getElementById('productForm');
     const editId = form.dataset.editId;
 
+    const imageValue = document.getElementById('productImageUrl').value || '💄';
+
     const productData = {
         name: document.getElementById('productName').value,
         price: parseFloat(document.getElementById('productPrice').value),
         category: document.getElementById('productCategory').value,
         description: document.getElementById('productDescription').value,
-        image: document.getElementById('productImage').value || '💄',
+        image: imageValue,
         stock: parseInt(document.getElementById('productStock').value)
     };
+
+    // Check storage before saving
+    checkStorageUsage();
 
     if (editId) {
         // Update existing
@@ -501,6 +607,11 @@ function saveProduct() {
     saveProducts();
     loadAdminProducts();
     closeProductModal();
+    
+    // Clear form and preview
+    form.reset();
+    document.getElementById('imagePreview').style.display = 'none';
+    
     alert('Product saved successfully!');
 }
 

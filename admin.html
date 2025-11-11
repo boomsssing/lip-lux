@@ -261,8 +261,23 @@
                     <textarea id="productDescription" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="text" id="productImage" placeholder="https://...">
+                    <label>Product Image</label>
+                    <div class="image-upload-options">
+                        <div class="upload-option">
+                            <label class="upload-label">
+                                <i class="fas fa-upload"></i> Upload Image
+                                <input type="file" id="productImageFile" accept="image/*" style="display: none;">
+                            </label>
+                            <small class="text-xs">Max 500KB for best performance</small>
+                        </div>
+                        <div class="upload-divider">OR</div>
+                        <div class="upload-option">
+                            <input type="text" id="productImageUrl" placeholder="Paste image URL or use emoji (💄)">
+                        </div>
+                    </div>
+                    <div id="imagePreview" style="margin-top: 1rem; display: none;">
+                        <img id="previewImg" style="max-width: 200px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Stock Quantity *</label>
