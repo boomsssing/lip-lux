@@ -158,13 +158,26 @@ function loadUserOrders(statusFilter = 'all') {
             </div>
             
             <div class="order-card-items">
-                ${order.items.slice(0, 3).map(item => `
-                    <div class="order-item-mini">
-                        <span class="item-emoji">${item.image}</span>
-                        <span class="item-name">${item.name}</span>
-                        <span class="item-qty">×${item.quantity}</span>
-                    </div>
-                `).join('')}
+                ${order.items.slice(0, 3).map(item => {
+                    let imageDisplay;
+                    if (item.image.startsWith('data:image') || item.image.startsWith('http')) {
+                        imageDisplay = `<img src="${item.image}" style="width: 30px; height: 30px; object-fit: cover; border-radius: 4px;">`;
+                    } else if (item.image.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+                        imageDisplay = `<img src="${item.image}" style="width: 30px; height: 30px; object-fit: cover; border-radius: 4px;">`;
+                    } else {
+                        imageDisplay = `<span class="item-emoji">${item.image}</span>`;
+                    }
+                    
+                    const colorInfo = item.selectedColor ? ` (${item.selectedColor.name})` : '';
+                    
+                    return `
+                        <div class="order-item-mini">
+                            ${imageDisplay}
+                            <span class="item-name">${item.name}${colorInfo}</span>
+                            <span class="item-qty">×${item.quantity}</span>
+                        </div>
+                    `;
+                }).join('')}
                 ${order.items.length > 3 ? `<p class="more-items">+${order.items.length - 3} more items</p>` : ''}
             </div>
 
@@ -240,16 +253,34 @@ function viewUserOrder(code) {
 
             <div class="order-section">
                 <h3>Order Items</h3>
-                ${order.items.map(item => `
-                    <div class="order-item-detail">
-                        <div class="item-image-large">${item.image}</div>
-                        <div class="item-info-detail">
-                            <h4>${item.name}</h4>
-                            <p>Quantity: ${item.quantity}</p>
+                ${order.items.map(item => {
+                    let imageDisplay;
+                    if (item.image.startsWith('data:image') || item.image.startsWith('http')) {
+                        imageDisplay = `<img src="${item.image}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">`;
+                    } else if (item.image.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+                        imageDisplay = `<img src="${item.image}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">`;
+                    } else {
+                        imageDisplay = `<div style="font-size: 2rem; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;">${item.image}</div>`;
+                    }
+                    
+                    const colorInfo = item.selectedColor ? 
+                        `<p style="margin: 0.25rem 0; color: #666; font-size: 0.9rem;">
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${item.selectedColor.hex}; margin-right: 0.5rem; border: 1px solid #ddd;"></span>
+                            ${item.selectedColor.name}
+                        </p>` : '';
+                    
+                    return `
+                        <div class="order-item-detail">
+                            <div class="item-image-large">${imageDisplay}</div>
+                            <div class="item-info-detail">
+                                <h4>${item.name}</h4>
+                                ${colorInfo}
+                                <p>Quantity: ${item.quantity}</p>
+                            </div>
+                            <div class="item-price-detail">GH₵ ${(item.price * item.quantity).toFixed(2)}</div>
                         </div>
-                        <div class="item-price-detail">GH₵ ${(item.price * item.quantity).toFixed(2)}</div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
 
             <div class="order-section">
@@ -336,8 +367,8 @@ function updateProfile() {
 // Change password
 function changePassword() {
     const currentPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
+    const newPassword = document.getElementById('newPasswordProfile').value;
+    const confirmPassword = document.getElementById('confirmPasswordProfile').value;
 
     if (newPassword !== confirmPassword) {
         alert('New passwords do not match!');

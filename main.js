@@ -30,12 +30,30 @@ document.addEventListener('DOMContentLoaded', function() {
     loadProductsGrid();
     setupEventListeners();
     updateCartUI();
+    initHeroSlideshow();
     
     // Initialize navbar as visible
     if (navbar) {
         navbar.classList.add('visible');
     }
 });
+
+// Hero slideshow functionality
+function initHeroSlideshow() {
+    const slides = document.querySelectorAll('.hero-slide');
+    if (slides.length <= 1) return;
+    
+    let currentSlide = 0;
+    
+    function nextSlide() {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (currentSlide + 1) % slides.length;
+        slides[currentSlide].classList.add('active');
+    }
+    
+    // Change slide every 5 seconds
+    setInterval(nextSlide, 5000);
+}
 
 // Load products grid
 function loadProductsGrid(filter = 'all') {
@@ -54,15 +72,17 @@ function loadProductsGrid(filter = 'all') {
         }
         
         return `
-            <div class="product-card" data-category="${product.category}">
-                <div class="product-image">${imageDisplay}</div>
+            <div class="product-card" data-category="${product.category}" data-product-id="${product.id}">
+                <div class="product-image">
+                    <img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
                 <div class="product-info">
                     <h3 class="product-name">${product.name}</h3>
                     <span class="product-category">${product.category}</span>
-                    <p class="product-description">${product.description}</p>
+                    <p class="product-description">${product.description.substring(0, 80)}...</p>
                     <div class="product-footer">
                         <span class="product-price">GH₵ ${product.price.toFixed(2)}</span>
-                        <button class="btn-add-cart" onclick="addToCart(${product.id})">
+                        <button class="btn-add-cart" data-product-id="${product.id}">
                             <i class="fas fa-cart-plus"></i> Add
                         </button>
                     </div>
@@ -74,6 +94,30 @@ function loadProductsGrid(filter = 'all') {
 
 // Setup event listeners
 function setupEventListeners() {
+    // Product card clicks - use event delegation
+    const productsGrid = document.getElementById('productsGrid');
+    if (productsGrid) {
+        productsGrid.addEventListener('click', function(e) {
+            // Check if clicked on product card or its child (but not the add to cart button)
+            const productCard = e.target.closest('.product-card');
+            const addToCartBtn = e.target.closest('.btn-add-cart');
+            
+            if (productCard && !addToCartBtn) {
+                const productId = parseInt(productCard.dataset.productId);
+                if (productId) {
+                    showProductDetails(productId);
+                }
+            } else if (addToCartBtn) {
+                // Handle add to cart button click
+                e.stopPropagation();
+                const productId = parseInt(addToCartBtn.dataset.productId);
+                if (productId) {
+                    addToCart(productId);
+                }
+            }
+        });
+    }
+
     // Filter buttons
     const filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => {
@@ -109,6 +153,7 @@ function setupEventListeners() {
             cartSidebar.classList.remove('active');
             overlay.classList.remove('active');
             closeUserModal();
+            closeProductModal();
         });
     }
 
@@ -319,4 +364,84 @@ function goToCheckout() {
         return;
     }
     window.location.href = 'checkout.html';
+}
+
+// Show product details popup
+function showProductDetails(productId) {
+    const product = getProductById(productId);
+    if (!product) {
+        console.error('Product not found:', productId);
+        return;
+    }
+    
+    const modal = document.getElementById('productModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (!modal || !overlay) {
+        console.error('Modal elements not found');
+        return;
+    }
+    
+    // Update modal content
+    const modalImage = document.getElementById('modalProductImage');
+    const modalName = document.getElementById('modalProductName');
+    const modalCategory = document.getElementById('modalProductCategory');
+    const modalPrice = document.getElementById('modalProductPrice');
+    const modalDescription = document.getElementById('modalProductDescription');
+    const modalIngredients = document.getElementById('modalProductIngredients');
+    const benefitsList = document.getElementById('modalProductBenefits');
+    const addToCartBtn = document.getElementById('modalAddToCart');
+    
+    if (modalImage) modalImage.src = product.image;
+    if (modalImage) modalImage.alt = product.name;
+    if (modalName) modalName.textContent = product.name;
+    if (modalCategory) modalCategory.textContent = product.category;
+    if (modalPrice) modalPrice.textContent = `GH₵ ${product.price.toFixed(2)}`;
+    if (modalDescription) modalDescription.textContent = product.description;
+    if (modalIngredients) modalIngredients.textContent = product.ingredients;
+    
+    // Update benefits list
+    if (benefitsList && product.benefits) {
+        benefitsList.innerHTML = product.benefits.map(benefit => `<li>${benefit}</li>`).join('');
+    }
+    
+    // Update add to cart button
+    if (addToCartBtn) {
+        addToCartBtn.onclick = () => {
+            addToCart(productId);
+            closeProductModal();
+        };
+        addToCartBtn.innerHTML = `<i class="fas fa-cart-plus"></i> Add to Cart - GH₵ ${product.price.toFixed(2)}`;
+    }
+    
+    // Show modal
+    modal.classList.add('active');
+    overlay.classList.add('active');
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+}
+
+// Close product details modal
+function closeProductModal() {
+    const modal = document.getElementById('productModal');
+    const overlay = document.getElementById('overlay');
+    
+    if (modal) modal.classList.remove('active');
+    
+    // Only remove overlay if no other modals are open
+    const userModal = document.getElementById('userModal');
+    const cartSidebar = document.getElementById('cartSidebar');
+    
+    if (overlay && userModal && cartSidebar) {
+        if (!userModal.classList.contains('active') && 
+            !cartSidebar.classList.contains('active')) {
+            overlay.classList.remove('active');
+        }
+    } else if (overlay) {
+        overlay.classList.remove('active');
+    }
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
 }

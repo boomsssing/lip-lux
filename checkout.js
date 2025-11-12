@@ -67,15 +67,25 @@ function loadOrderSummary() {
             let imageDisplay;
             if (item.image.startsWith('data:image') || item.image.startsWith('http')) {
                 imageDisplay = `<img src="${item.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
+            } else if (item.image.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+                // Regular image file
+                imageDisplay = `<img src="${item.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
             } else {
-                imageDisplay = item.image; // Emoji
+                imageDisplay = `<div style="font-size: 2rem; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">${item.image}</div>`;
             }
+            
+            const colorInfo = item.selectedColor ? 
+                `<div style="font-size: 0.9rem; color: #666; margin: 0.25rem 0;">
+                    <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${item.selectedColor.hex}; margin-right: 0.5rem; border: 1px solid #ddd;"></span>
+                    ${item.selectedColor.name}
+                </div>` : '';
             
             return `
                 <div class="summary-item">
                     <div class="summary-item-image">${imageDisplay}</div>
                     <div class="summary-item-info">
                         <div><strong>${item.name}</strong></div>
+                        ${colorInfo}
                         <div>Qty: ${item.quantity} × GH₵ ${item.price.toFixed(2)}</div>
                     </div>
                 </div>
@@ -282,11 +292,14 @@ function showConfirmation(order) {
         </div>
         <div style="margin-bottom: 1rem;">
             <strong>Items:</strong>
-            ${order.items.map(item => `
-                <div style="padding: 0.5rem 0; border-bottom: 1px solid #ecf0f1;">
-                    ${item.name} × ${item.quantity} - GH₵ ${(item.price * item.quantity).toFixed(2)}
-                </div>
-            `).join('')}
+            ${order.items.map(item => {
+                const colorInfo = item.selectedColor ? ` (${item.selectedColor.name})` : '';
+                return `
+                    <div style="padding: 0.5rem 0; border-bottom: 1px solid #ecf0f1;">
+                        ${item.name}${colorInfo} × ${item.quantity} - GH₵ ${(item.price * item.quantity).toFixed(2)}
+                    </div>
+                `;
+            }).join('')}
         </div>
         <div style="font-size: 1.2rem; font-weight: bold; color: #ff69b4; margin-top: 1rem;">
             Total: GH₵ ${order.total.toFixed(2)}

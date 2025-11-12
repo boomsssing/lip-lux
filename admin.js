@@ -659,11 +659,15 @@ function loadAdminProducts() {
     const grid = document.getElementById('adminProductsGrid');
     
     grid.innerHTML = products.map(product => {
-        // Check if image is Base64, URL, or emoji
+        // Check if image is Base64, URL, or file
         let imageDisplay;
         if (product.image.startsWith('data:image') || product.image.startsWith('http')) {
             imageDisplay = `<img src="${product.image}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem;">`;
+        } else if (product.image.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+            // Regular image file
+            imageDisplay = `<img src="${product.image}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem;">`;
         } else {
+            // Emoji or other content
             imageDisplay = `<div style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">${product.image}</div>`;
         }
         

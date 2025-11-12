@@ -27,10 +27,10 @@
                     <a href="track-order.html">Track Order</a>
                 </div>
                 <div class="nav-actions">
-                    <button class="btn-icon" id="userBtn">
+                    <button type="button" class="btn-icon" id="userBtn" aria-label="User account">
                         <i class="fas fa-user-circle"></i>
                     </button>
-                    <button class="btn-icon" id="cartBtn">
+                    <button type="button" class="btn-icon" id="cartBtn" aria-label="Shopping cart">
                         <i class="fas fa-shopping-cart"></i>
                         <span class="cart-count">0</span>
                     </button>
@@ -51,20 +51,20 @@
                     <h1 id="userName">Welcome Back!</h1>
                     <p id="userEmail"></p>
                 </div>
-                <button class="btn btn-secondary" onclick="userLogout()">
+                <button type="button" class="btn btn-secondary" onclick="userLogout()">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
             </div>
 
             <!-- Dashboard Tabs -->
             <div class="dashboard-tabs">
-                <button class="dashboard-tab active" data-tab="orders">
+                <button type="button" class="dashboard-tab active" data-tab="orders">
                     <i class="fas fa-shopping-bag"></i> My Orders
                 </button>
-                <button class="dashboard-tab" data-tab="profile">
+                <button type="button" class="dashboard-tab" data-tab="profile">
                     <i class="fas fa-user"></i> Profile
                 </button>
-                <button class="dashboard-tab" data-tab="addresses">
+                <button type="button" class="dashboard-tab" data-tab="addresses">
                     <i class="fas fa-map-marker-alt"></i> Addresses
                 </button>
             </div>
@@ -74,7 +74,8 @@
                 <div class="section-header-user">
                     <h2>My Orders</h2>
                     <div class="order-filters">
-                        <select id="userOrderFilter" class="filter-select">
+                        <label for="userOrderFilter" class="sr-only">Filter Orders</label>
+                        <select id="userOrderFilter" class="filter-select" name="orderFilter" aria-label="Filter Orders">
                             <option value="all">All Orders</option>
                             <option value="pending">Pending</option>
                             <option value="processing">Processing</option>
@@ -95,16 +96,16 @@
                     <h2>Profile Information</h2>
                     <form id="profileForm">
                         <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text" id="profileName" required>
+                            <label for="profileName">Full Name</label>
+                            <input type="text" id="profileName" name="name" required>
                         </div>
                         <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="profileEmail" required>
+                            <label for="profileEmail">Email</label>
+                            <input type="email" id="profileEmail" name="email" required>
                         </div>
                         <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel" id="profilePhone" required>
+                            <label for="profilePhone">Phone Number</label>
+                            <input type="tel" id="profilePhone" name="phone" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Update Profile</button>
                     </form>
@@ -114,16 +115,16 @@
                     <h2>Change Password</h2>
                     <form id="passwordForm">
                         <div class="form-group">
-                            <label>Current Password</label>
-                            <input type="password" id="currentPassword" required>
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" name="currentPassword" required>
                         </div>
                         <div class="form-group">
-                            <label>New Password</label>
-                            <input type="password" id="newPassword" required>
+                            <label for="newPasswordProfile">New Password</label>
+                            <input type="password" id="newPasswordProfile" name="newPassword" required>
                         </div>
                         <div class="form-group">
-                            <label>Confirm New Password</label>
-                            <input type="password" id="confirmPassword" required>
+                            <label for="confirmPasswordProfile">Confirm New Password</label>
+                            <input type="password" id="confirmPasswordProfile" name="confirmPassword" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Change Password</button>
                     </form>
@@ -134,7 +135,7 @@
             <div class="dashboard-content" id="addressesTab">
                 <div class="section-header-user">
                     <h2>Saved Addresses</h2>
-                    <button class="btn btn-primary" onclick="openAddAddressModal()">
+                    <button type="button" class="btn btn-primary" onclick="openAddAddressModal()">
                         <i class="fas fa-plus"></i> Add Address
                     </button>
                 </div>
@@ -149,7 +150,7 @@
     <!-- Order Details Modal -->
     <div class="modal" id="orderDetailsModal">
         <div class="modal-content large">
-            <button class="close-btn" onclick="closeOrderDetailsModal()">
+            <button type="button" class="close-btn" onclick="closeOrderDetailsModal()" aria-label="Close order details">
                 <i class="fas fa-times"></i>
             </button>
             <div id="orderDetailsContent">
@@ -161,26 +162,26 @@
     <!-- Add Address Modal -->
     <div class="modal" id="addAddressModal">
         <div class="modal-content">
-            <button class="close-btn" onclick="closeAddAddressModal()">
+            <button type="button" class="close-btn" onclick="closeAddAddressModal()" aria-label="Close address modal">
                 <i class="fas fa-times"></i>
             </button>
             <h2>Add New Address</h2>
             <form id="addAddressForm">
                 <div class="form-group">
-                    <label>Address Label</label>
-                    <input type="text" id="addressLabel" placeholder="e.g., Home, Work" required>
+                    <label for="addressLabel">Address Label</label>
+                    <input type="text" id="addressLabel" name="label" placeholder="e.g., Home, Work" required>
                 </div>
                 <div class="form-group">
-                    <label>Full Address</label>
-                    <textarea id="addressFull" rows="3" required></textarea>
+                    <label for="addressFull">Full Address</label>
+                    <textarea id="addressFull" name="fullAddress" rows="3" required></textarea>
                 </div>
                 <div class="form-group">
-                    <label>City</label>
-                    <input type="text" id="addressCity" required>
+                    <label for="addressCity">City</label>
+                    <input type="text" id="addressCity" name="city" required>
                 </div>
                 <div class="form-group">
-                    <label>Phone Number</label>
-                    <input type="tel" id="addressPhone" required>
+                    <label for="addressPhone">Phone Number</label>
+                    <input type="tel" id="addressPhone" name="phone" required>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Save Address</button>
             </form>
