@@ -240,7 +240,7 @@ function initializeYourProducts() {
         {
             id: 14,
             name: "G-Shock Watch",
-            price: 300.00,
+            price: 80.00,
             category: "accessories",
             description: "Durable G-Shock style watch - premium accessory",
             image: "PHOTO-2025-11-12-22-05-09.jpg",
