@@ -73,15 +73,23 @@
             <div class="dashboard-content active" id="ordersTab">
                 <div class="section-header-user">
                     <h2>My Orders</h2>
-                    <div class="order-filters">
-                        <label for="userOrderFilter" class="sr-only">Filter Orders</label>
-                        <select id="userOrderFilter" class="filter-select" name="orderFilter" aria-label="Filter Orders">
-                            <option value="all">All Orders</option>
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="shipped">Out for Delivery</option>
-                            <option value="delivered">Delivered</option>
-                        </select>
+                    <div class="order-actions-header">
+                        <button type="button" class="btn btn-secondary" onclick="openTrackPackageModal()">
+                            <i class="fas fa-search"></i> Track Package
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="refreshOrders()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <div class="order-filters">
+                            <label for="userOrderFilter" class="sr-only">Filter Orders</label>
+                            <select id="userOrderFilter" class="filter-select" name="orderFilter" aria-label="Filter Orders">
+                                <option value="all">All Orders</option>
+                                <option value="pending">Pending</option>
+                                <option value="processing">Processing</option>
+                                <option value="shipped">Out for Delivery</option>
+                                <option value="delivered">Delivered</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -188,6 +196,32 @@
         </div>
     </div>
 
+    <!-- Track Package Modal -->
+    <div class="modal" id="trackPackageModal">
+        <div class="modal-content large">
+            <button type="button" class="close-btn" onclick="closeTrackPackageModal()" aria-label="Close track package modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2>Track Your Package</h2>
+            <form id="trackPackageForm">
+                <div class="form-group">
+                    <label for="trackingCode">Enter Tracking Code</label>
+                    <input type="text" id="trackingCode" name="trackingCode" placeholder="e.g., LL123456789" required>
+                    <small>You can find your tracking code in your order confirmation email or SMS.</small>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Track Package
+                </button>
+            </form>
+            
+            <!-- Tracking Results Area -->
+            <div id="trackingResults" class="tracking-results" style="display: none;">
+                <!-- Results will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
     <div class="overlay" id="overlay"></div>
 
     <!-- Footer -->

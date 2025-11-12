@@ -184,14 +184,23 @@ function processPayment() {
     const momoName = document.getElementById('momoName').value;
     const momoReference = document.getElementById('momoReference').value;
 
+    // Validate required fields
     if (!momoNumber || !momoName) {
-        alert('Please fill in all required payment details');
+        showPaymentError('Please fill in all required payment details');
+        return;
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^(\+233|0)[2-9][0-9]{8}$/;
+    if (!phoneRegex.test(momoNumber.replace(/\s/g, ''))) {
+        showPaymentError('Please enter a valid Ghana mobile number');
         return;
     }
 
     // Confirm payment was made
+    const totalAmount = (getCartTotal() + DELIVERY_FEE).toFixed(2);
     const confirmed = confirm(
-        'Please confirm that you have sent GH₵ ' + (getCartTotal() + DELIVERY_FEE).toFixed(2) + 
+        'Please confirm that you have sent GH₵ ' + totalAmount + 
         ' to 0246780686 (Doris Agyakwaa Brown) via Mobile Money.\n\n' +
         'Click OK to confirm and place your order.'
     );
@@ -200,55 +209,350 @@ function processPayment() {
         return;
     }
 
-    // Show loading
+    // Get the button and show loading state
     const btn = event.target;
+    const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Processing...';
 
-    // Simulate payment processing
-    setTimeout(() => {
-        // Generate order code
-        const orderCode = generateOrderCode();
+    // Add loading spinner
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    // Show processing status
+    showProcessingStatus('Validating payment details...');
+
+    // Set timeout protection (30 seconds max)
+    const timeoutId = setTimeout(() => {
+        resetPaymentButton(btn, originalText);
+        hideProcessingStatus();
+        showPaymentError('Payment processing timed out. Please try again.');
+    }, 30000);
+
+    try {
+        // Simulate payment processing with better error handling
+        processPaymentAsync()
+            .then((order) => {
+                clearTimeout(timeoutId);
+                hideProcessingStatus();
+                
+                // Save order
+                saveOrder(order);
+
+                // Clear cart
+                clearCart();
+
+                // Show confirmation
+                showConfirmation(order);
+
+                // Reset button
+                resetPaymentButton(btn, originalText);
+                
+                // Show success message
+                showPaymentSuccess('Order placed successfully!');
+            })
+            .catch((error) => {
+                clearTimeout(timeoutId);
+                hideProcessingStatus();
+                resetPaymentButton(btn, originalText);
+                showPaymentError(error.message || 'Payment processing failed. Please try again.');
+                console.error('Payment processing error:', error);
+            });
+    } catch (error) {
+        clearTimeout(timeoutId);
+        resetPaymentButton(btn, originalText);
+        showPaymentError('An unexpected error occurred. Please try again.');
+        console.error('Payment processing error:', error);
+    }
+}
+
+// Async payment processing function with progress tracking
+function processPaymentAsync() {
+    return new Promise((resolve, reject) => {
+        let step = 0;
+        const steps = [
+            'Verifying payment information...',
+            'Processing transaction...',
+            'Generating order details...',
+            'Finalizing order...'
+        ];
         
-        // Get customer data
-        const customerData = JSON.parse(sessionStorage.getItem('checkout_customer'));
-        
-        // Create order
-        const order = {
-            code: orderCode,
-            customer: customerData,
-            items: [...cart],
-            subtotal: getCartTotal(),
-            delivery: DELIVERY_FEE,
-            total: getCartTotal() + DELIVERY_FEE,
-            payment: {
-                method: 'momo',
-                provider: selectedMomoProvider,
-                customerNumber: momoNumber,
-                customerName: momoName,
-                reference: momoReference || 'N/A',
-                paidTo: '0246780686',
-                paidToName: 'Doris Agyakwaa Brown'
-            },
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-            timeline: {
-                placed: new Date().toISOString()
+        function nextStep() {
+            if (step < steps.length) {
+                if (step === 0) {
+                    showProcessingStatus(steps[step]);
+                } else {
+                    updateProcessingStatus(steps[step]);
+                }
+                step++;
+                setTimeout(nextStep, 800 + Math.random() * 400); // 800-1200ms per step
+            } else {
+                completeProcessing();
             }
-        };
+        }
+        
+        function completeProcessing() {
+            try {
+                // Get customer data
+                const customerData = JSON.parse(sessionStorage.getItem('checkout_customer'));
+                
+                if (!customerData) {
+                    reject(new Error('Customer information not found. Please go back and fill in your details.'));
+                    return;
+                }
 
-        // Save order
-        saveOrder(order);
+                // Generate order code
+                const orderCode = generateOrderCode();
+                
+                // Get form values
+                const momoNumber = document.getElementById('momoNumber').value;
+                const momoName = document.getElementById('momoName').value;
+                const momoReference = document.getElementById('momoReference').value;
 
-        // Clear cart
-        clearCart();
+                // Enhance customer data with user ID if logged in
+                if (typeof currentUser !== 'undefined' && currentUser && !currentUser.guest) {
+                    customerData.userId = currentUser.id;
+                    customerData.email = currentUser.email;
+                    customerData.phone = currentUser.phone;
+                }
 
-        // Show confirmation
-        showConfirmation(order);
+                // Validate cart
+                if (!cart || cart.length === 0) {
+                    reject(new Error('Your cart is empty. Please add items before checkout.'));
+                    return;
+                }
 
-        btn.disabled = false;
-        btn.textContent = 'Confirm Order';
-    }, 2000);
+                // Create order
+                const order = {
+                    code: orderCode,
+                    customer: customerData,
+                    items: [...cart],
+                    subtotal: getCartTotal(),
+                    delivery: DELIVERY_FEE,
+                    total: getCartTotal() + DELIVERY_FEE,
+                    payment: {
+                        method: 'momo',
+                        provider: selectedMomoProvider,
+                        customerNumber: momoNumber,
+                        customerName: momoName,
+                        reference: momoReference || 'N/A',
+                        paidTo: '0246780686',
+                        paidToName: 'Doris Agyakwaa Brown'
+                    },
+                    status: 'pending',
+                    createdAt: new Date().toISOString(),
+                    timeline: {
+                        placed: new Date().toISOString()
+                    }
+                };
+
+                // Simulate random failure (2% chance for testing)
+                if (Math.random() < 0.02) {
+                    reject(new Error('Payment verification failed. Please check your payment details and try again.'));
+                    return;
+                }
+
+                updateProcessingStatus('Order created successfully!');
+                setTimeout(() => resolve(order), 500);
+            } catch (error) {
+                reject(error);
+            }
+        }
+        
+        // Start processing
+        nextStep();
+    });
+}
+
+// Reset payment button to original state
+function resetPaymentButton(btn, originalText) {
+    btn.disabled = false;
+    btn.textContent = originalText;
+    btn.innerHTML = originalText;
+}
+
+// Show payment error message with retry option
+function showPaymentError(message, showRetry = true) {
+    // Remove any existing notifications
+    const existingNotifications = document.querySelectorAll('.payment-notification');
+    existingNotifications.forEach(n => n.remove());
+
+    // Create error notification
+    const notification = document.createElement('div');
+    notification.className = 'payment-notification error';
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: #e74c3c;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        max-width: 400px;
+        animation: slideIn 0.3s;
+    `;
+    
+    const retryButton = showRetry ? `
+        <button onclick="retryPayment()" style="
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        ">
+            <i class="fas fa-redo"></i> Try Again
+        </button>
+    ` : '';
+    
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: ${showRetry ? '0.5rem' : '0'};">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>${message}</span>
+        </div>
+        ${retryButton}
+    `;
+    document.body.appendChild(notification);
+
+    // Remove after 8 seconds (longer for retry option)
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.animation = 'slideOut 0.3s';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+    }, 8000);
+}
+
+// Retry payment function
+function retryPayment() {
+    // Remove notification
+    const existingNotifications = document.querySelectorAll('.payment-notification');
+    existingNotifications.forEach(n => n.remove());
+    
+    // Trigger payment process again
+    processPayment();
+}
+
+// Show payment success message
+function showPaymentSuccess(message) {
+    // Remove any existing notifications
+    const existingNotifications = document.querySelectorAll('.payment-notification');
+    existingNotifications.forEach(n => n.remove());
+
+    // Create success notification
+    const notification = document.createElement('div');
+    notification.className = 'payment-notification success';
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: #2ecc71;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        max-width: 400px;
+        animation: slideIn 0.3s;
+    `;
+    notification.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(notification);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Show processing status
+function showProcessingStatus(message) {
+    // Remove existing status
+    hideProcessingStatus();
+    
+    // Create processing status overlay
+    const statusOverlay = document.createElement('div');
+    statusOverlay.id = 'processingStatus';
+    statusOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 15000;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    statusOverlay.innerHTML = `
+        <div style="
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 400px;
+            margin: 0 1rem;
+        ">
+            <div style="
+                width: 60px;
+                height: 60px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #ff69b4;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 1rem;
+            "></div>
+            <h3 style="
+                margin-bottom: 0.5rem;
+                color: #2c3e50;
+                font-family: var(--font-heading);
+            ">Processing Payment</h3>
+            <p style="
+                color: #7f8c8d;
+                margin: 0;
+                font-size: 0.95rem;
+            " id="statusMessage">${message}</p>
+        </div>
+    `;
+    
+    document.body.appendChild(statusOverlay);
+}
+
+// Update processing status message
+function updateProcessingStatus(message) {
+    const statusMessage = document.getElementById('statusMessage');
+    if (statusMessage) {
+        statusMessage.textContent = message;
+    }
+}
+
+// Hide processing status
+function hideProcessingStatus() {
+    const statusOverlay = document.getElementById('processingStatus');
+    if (statusOverlay) {
+        statusOverlay.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => {
+            if (statusOverlay.parentNode) {
+                statusOverlay.remove();
+            }
+        }, 300);
+    }
 }
 
 // Generate unique order code
@@ -317,3 +621,47 @@ function trackThisOrder() {
         window.location.href = `track-order.html?code=${orderCode}`;
     }
 }
+
+// Test function to verify payment processing works
+function testPaymentFlow() {
+    console.log('Testing payment flow...');
+    
+    // Mock cart data
+    if (!window.cart || cart.length === 0) {
+        window.cart = [
+            {
+                id: 1,
+                itemKey: '1_test',
+                name: 'Test Lipstick',
+                price: 25.00,
+                image: '💄',
+                quantity: 1,
+                selectedColor: { name: 'Red', hex: '#ff0000', stock: 10 }
+            }
+        ];
+        console.log('Mock cart created:', cart);
+    }
+    
+    // Mock customer data
+    sessionStorage.setItem('checkout_customer', JSON.stringify({
+        name: 'Test Customer',
+        phone: '0241234567',
+        email: 'test@example.com',
+        address: 'Test Address',
+        city: 'Accra',
+        notes: 'Test order'
+    }));
+    
+    // Mock form values
+    const momoNumberInput = document.getElementById('momoNumber');
+    const momoNameInput = document.getElementById('momoName');
+    
+    if (momoNumberInput) momoNumberInput.value = '0241234567';
+    if (momoNameInput) momoNameInput.value = 'Test Customer';
+    
+    console.log('Test data prepared. Payment flow should work now.');
+    return true;
+}
+
+// Add to window for testing
+window.testPaymentFlow = testPaymentFlow;

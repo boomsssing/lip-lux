@@ -47,7 +47,7 @@ function loadUserDashboard() {
     document.getElementById('userName').textContent = `Welcome, ${currentUser.name}!`;
     document.getElementById('userEmail').textContent = currentUser.email;
 
-    // Load user orders
+    // Load user orders (with real-time refresh)
     loadUserOrders();
 
     // Load profile data
@@ -55,6 +55,12 @@ function loadUserDashboard() {
 
     // Load addresses
     loadAddresses();
+
+    // Set up auto-refresh for orders every 30 seconds
+    setInterval(() => {
+        console.log('Auto-refreshing orders...'); // Debug log
+        loadUserOrders();
+    }, 30000);
 }
 
 // Setup dashboard listeners
@@ -64,6 +70,7 @@ function setupDashboardListeners() {
     tabBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const tabName = this.dataset.tab;
+            console.log('Switching to tab:', tabName); // Debug log
             
             tabBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
@@ -72,7 +79,12 @@ function setupDashboardListeners() {
                 content.classList.remove('active');
             });
             
-            document.getElementById(tabName + 'Tab').classList.add('active');
+            const targetTab = document.getElementById(tabName + 'Tab');
+            if (targetTab) {
+                targetTab.classList.add('active');
+            } else {
+                console.error('Tab not found:', tabName + 'Tab'); // Debug log
+            }
         });
     });
 
@@ -111,23 +123,47 @@ function setupDashboardListeners() {
         });
     }
 
+    // Track package form
+    const trackPackageForm = document.getElementById('trackPackageForm');
+    if (trackPackageForm) {
+        trackPackageForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            trackPackageByCode();
+        });
+    }
+
     // Overlay click
     const overlay = document.getElementById('overlay');
     if (overlay) {
         overlay.addEventListener('click', function() {
             closeOrderDetailsModal();
             closeAddAddressModal();
+            closeTrackPackageModal();
         });
     }
+}
+
+// Get all orders from localStorage
+function getOrders() {
+    const saved = localStorage.getItem('liplux_orders');
+    return saved ? JSON.parse(saved) : [];
 }
 
 // Load user orders
 function loadUserOrders(statusFilter = 'all') {
     const allOrders = getOrders();
-    let userOrders = allOrders.filter(order => 
-        order.customer.email === currentUser.email ||
-        order.customer.phone === currentUser.phone
-    );
+    console.log('All orders:', allOrders); // Debug log
+    console.log('Current user:', currentUser); // Debug log
+    
+    let userOrders = allOrders.filter(order => {
+        const userIdMatch = order.customer.userId === currentUser.id;
+        const emailMatch = order.customer.email === currentUser.email;
+        const phoneMatch = order.customer.phone === currentUser.phone;
+        console.log(`Order ${order.code}: userID match=${userIdMatch}, email match=${emailMatch}, phone match=${phoneMatch}`); // Debug log
+        return userIdMatch || emailMatch || phoneMatch;
+    });
+
+    console.log('User orders found:', userOrders.length); // Debug log
 
     if (statusFilter !== 'all') {
         userOrders = userOrders.filter(order => order.status === statusFilter);
@@ -326,6 +362,23 @@ function trackOrder(code) {
     window.location.href = `track-order.html?code=${code}`;
 }
 
+// Refresh orders manually
+function refreshOrders() {
+    console.log('Manually refreshing orders...'); // Debug log
+    loadUserOrders();
+    
+    // Show a brief notification
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, 1000);
+}
+
 // Load profile data
 function loadProfileData() {
     document.getElementById('profileName').value = currentUser.name || '';
@@ -477,6 +530,159 @@ function deleteAddress(index) {
         saveUserAddresses(addresses);
         loadAddresses();
     }
+}
+
+// Get users helper function
+function getUsers() {
+    const saved = localStorage.getItem('liplux_users');
+    return saved ? JSON.parse(saved) : [];
+}
+
+// Save users helper function
+function saveUsers(users) {
+    localStorage.setItem('liplux_users', JSON.stringify(users));
+}
+
+// Save user helper function
+function saveUser(user) {
+    currentUser = user;
+    localStorage.setItem('liplux_user', JSON.stringify(user));
+}
+
+// Open track package modal
+function openTrackPackageModal() {
+    document.getElementById('trackPackageModal').classList.add('active');
+    document.getElementById('overlay').classList.add('active');
+}
+
+// Close track package modal
+function closeTrackPackageModal() {
+    document.getElementById('trackPackageModal').classList.remove('active');
+    document.getElementById('overlay').classList.remove('active');
+    document.getElementById('trackPackageForm').reset();
+    
+    // Hide tracking results
+    const resultsDiv = document.getElementById('trackingResults');
+    if (resultsDiv) {
+        resultsDiv.style.display = 'none';
+        resultsDiv.innerHTML = '';
+    }
+}
+
+// Track package by code
+function trackPackageByCode() {
+    const trackingCode = document.getElementById('trackingCode').value.trim();
+    const resultsDiv = document.getElementById('trackingResults');
+    
+    if (!trackingCode) {
+        alert('Please enter a tracking code');
+        return;
+    }
+
+    // Show loading state
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = `
+        <div class="tracking-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Searching for your package...</p>
+        </div>
+    `;
+
+    // Search for the order
+    setTimeout(() => {
+        const allOrders = getOrders();
+        const order = allOrders.find(o => o.code.toLowerCase() === trackingCode.toLowerCase());
+        
+        if (!order) {
+            resultsDiv.innerHTML = `
+                <div class="tracking-not-found">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Order Not Found</h3>
+                    <p>No order found with tracking code: <strong>${trackingCode}</strong></p>
+                    <p>Please check your tracking code and try again.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Display order tracking information
+        displayTrackingResults(order);
+    }, 1000);
+}
+
+// Display tracking results
+function displayTrackingResults(order) {
+    const resultsDiv = document.getElementById('trackingResults');
+    
+    resultsDiv.innerHTML = `
+        <div class="tracking-found">
+            <div class="tracking-header">
+                <i class="fas fa-check-circle" style="color: #27ae60;"></i>
+                <h3>Package Found!</h3>
+                <p>Order Code: <strong>${order.code}</strong></p>
+            </div>
+
+            <div class="tracking-timeline">
+                <h4>Order Status</h4>
+                <div class="timeline">
+                    <div class="timeline-item ${order.status === 'pending' || order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered' ? 'completed' : ''}">
+                        <div class="timeline-icon"><i class="fas fa-check"></i></div>
+                        <div class="timeline-content">
+                            <h5>Order Placed</h5>
+                            <p>${new Date(order.createdAt).toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item ${order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered' ? 'completed' : ''}">
+                        <div class="timeline-icon"><i class="fas fa-box"></i></div>
+                        <div class="timeline-content">
+                            <h5>Processing</h5>
+                            <p>Your order is being prepared</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item ${order.status === 'shipped' || order.status === 'delivered' ? 'completed' : ''}">
+                        <div class="timeline-icon"><i class="fas fa-truck"></i></div>
+                        <div class="timeline-content">
+                            <h5>Out for Delivery</h5>
+                            <p>Your order is on the way</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item ${order.status === 'delivered' ? 'completed' : ''}">
+                        <div class="timeline-icon"><i class="fas fa-home"></i></div>
+                        <div class="timeline-content">
+                            <h5>Delivered</h5>
+                            <p>Order has been delivered</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tracking-details">
+                <div class="tracking-section">
+                    <h4>Order Items</h4>
+                    ${order.items.map(item => {
+                        const colorInfo = item.selectedColor ? ` (${item.selectedColor.name})` : '';
+                        return `
+                            <div class="tracking-item">
+                                <span class="item-name">${item.name}${colorInfo}</span>
+                                <span class="item-qty">×${item.quantity}</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+
+                <div class="tracking-section">
+                    <h4>Delivery Information</h4>
+                    <p><strong>Address:</strong> ${order.customer.address}, ${order.customer.city}</p>
+                    <p><strong>Phone:</strong> ${order.customer.phone}</p>
+                </div>
+
+                <div class="tracking-section">
+                    <h4>Order Total</h4>
+                    <p class="total-amount">GH₵ ${order.total.toFixed(2)}</p>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // User logout
