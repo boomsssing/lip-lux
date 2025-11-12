@@ -140,6 +140,150 @@ function initializeYourProducts() {
                 { name: "Sunset Orange", hex: "#FF8C69", stock: 18 },
                 { name: "Copper Glow", hex: "#B87333", stock: 15 }
             ]
+        },
+        {
+            id: 8,
+            name: "Pink Print",
+            price: 70.00,
+            category: "glossy",
+            description: "Vibrant pink with stunning glossy finish",
+            image: "PHOTO-2025-11-12-22-05-06 (1).jpg",
+            stock: 25,
+            ingredients: "Vitamin E, Pink Pigments",
+            benefits: ["Bold pink statement", "High-shine finish"],
+            colors: [
+                { name: "Hot Pink", hex: "#FF1493", stock: 25 },
+                { name: "Bubblegum Pink", hex: "#FF69B4", stock: 20 },
+                { name: "Fuchsia", hex: "#FF00FF", stock: 18 }
+            ]
+        },
+        {
+            id: 9,
+            name: "Hot Coco",
+            price: 70.00,
+            category: "matte",
+            description: "Rich chocolate brown with matte finish",
+            image: "PHOTO-2025-11-12-22-05-06.jpg",
+            stock: 20,
+            ingredients: "Vitamin E, Cocoa Extract",
+            benefits: ["Warm brown tone", "Long-lasting matte"],
+            colors: [
+                { name: "Milk Chocolate", hex: "#8B4513", stock: 20 },
+                { name: "Dark Chocolate", hex: "#654321", stock: 18 },
+                { name: "Cocoa Brown", hex: "#A0522D", stock: 15 }
+            ]
+        },
+        {
+            id: 10,
+            name: "Love Potion",
+            price: 70.00,
+            category: "shimmer",
+            description: "Magical shimmer with enchanting finish",
+            image: "PHOTO-2025-11-12-22-05-07 (1).jpg",
+            stock: 22,
+            ingredients: "Vitamin E, Shimmer Particles",
+            benefits: ["Magical shimmer", "Enchanting glow"],
+            colors: [
+                { name: "Mystic Purple", hex: "#9932CC", stock: 22 },
+                { name: "Love Pink", hex: "#FF1493", stock: 20 },
+                { name: "Magic Mauve", hex: "#DDA0DD", stock: 18 }
+            ]
+        },
+        {
+            id: 11,
+            name: "Lovely",
+            price: 70.00,
+            category: "glossy",
+            description: "Sweet and lovely with perfect glossy shine",
+            image: "PHOTO-2025-11-12-22-05-07.jpg",
+            stock: 28,
+            ingredients: "Vitamin E, Sweet Extracts",
+            benefits: ["Sweet finish", "Lovely shine"],
+            colors: [
+                { name: "Sweet Pink", hex: "#FFB6C1", stock: 28 },
+                { name: "Lovely Rose", hex: "#FF69B4", stock: 25 },
+                { name: "Candy Pink", hex: "#FF1493", stock: 20 }
+            ]
+        },
+        {
+            id: 12,
+            name: "Charm Socks",
+            price: 150.00,
+            category: "accessories",
+            description: "Stylish charm socks - perfect accessory",
+            image: "PHOTO-2025-11-12-22-05-08 (1).jpg",
+            stock: 15,
+            ingredients: "Premium Cotton Blend",
+            benefits: ["Comfortable fit", "Stylish design"],
+            colors: [
+                { name: "Classic White", hex: "#FFFFFF", stock: 15 },
+                { name: "Soft Pink", hex: "#FFB6C1", stock: 12 },
+                { name: "Charcoal", hex: "#36454F", stock: 10 }
+            ]
+        },
+        {
+            id: 13,
+            name: "Lip Musk",
+            price: 70.00,
+            category: "matte",
+            description: "Sophisticated musk-inspired matte finish",
+            image: "PHOTO-2025-11-12-22-05-08.jpg",
+            stock: 20,
+            ingredients: "Vitamin E, Musk Essence",
+            benefits: ["Sophisticated scent", "Matte perfection"],
+            colors: [
+                { name: "Musk Brown", hex: "#8B4513", stock: 20 },
+                { name: "Earthy Nude", hex: "#D2B48C", stock: 18 },
+                { name: "Deep Taupe", hex: "#483C32", stock: 15 }
+            ]
+        },
+        {
+            id: 14,
+            name: "G-Shock Watch",
+            price: 300.00,
+            category: "accessories",
+            description: "Durable G-Shock style watch - premium accessory",
+            image: "PHOTO-2025-11-12-22-05-09.jpg",
+            stock: 8,
+            ingredients: "Premium Materials",
+            benefits: ["Water resistant", "Durable design"],
+            colors: [
+                { name: "Classic Black", hex: "#000000", stock: 8 },
+                { name: "Military Green", hex: "#4B5320", stock: 5 },
+                { name: "Navy Blue", hex: "#000080", stock: 6 }
+            ]
+        },
+        {
+            id: 15,
+            name: "Potion Coco",
+            price: 70.00,
+            category: "matte",
+            description: "Magical cocoa blend with matte finish",
+            image: "PHOTO-2025-11-12-22-05-10.jpg",
+            stock: 18,
+            ingredients: "Vitamin E, Cocoa Blend",
+            benefits: ["Rich cocoa tone", "Magical finish"],
+            colors: [
+                { name: "Cocoa Magic", hex: "#8B4513", stock: 18 },
+                { name: "Chocolate Potion", hex: "#654321", stock: 15 },
+                { name: "Mocha Spell", hex: "#A0522D", stock: 12 }
+            ]
+        },
+        {
+            id: 16,
+            name: "Sold Out Special",
+            price: 70.00,
+            category: "limited",
+            description: "Limited edition - previously sold out item",
+            image: "PHOTO-2025-11-12-22-05-12.jpg",
+            stock: 0,
+            ingredients: "Premium Formula",
+            benefits: ["Limited edition", "Exclusive design"],
+            colors: [
+                { name: "Exclusive Shade", hex: "#800080", stock: 0 },
+                { name: "Limited Pink", hex: "#FF1493", stock: 0 },
+                { name: "Special Edition", hex: "#9932CC", stock: 0 }
+            ]
         }
     ];
     
@@ -150,7 +294,7 @@ function initializeYourProducts() {
     products.length = 0;
     products.push(...yourProducts);
     
-    console.log('Your 7 products loaded into localStorage');
+    console.log('All 16 products loaded into localStorage');
 }
 
 // Initialize with your products
